@@ -1,4 +1,47 @@
-hash: 652d44dc49addc7a0ab02e9b8e29a31a420d24dd8cfd6a8f1fb5a4effd6436aa
-updated: 2018-05-11T20:43:16.186468-05:00
-imports: []
+hash: 723ded13f4edea48ca90d360be14d00404a2be75e26218fa4a86fd2ae55dccf0
+updated: 2018-05-21T22:14:48.535718-05:00
+imports:
+- name: github.com/aws/aws-sdk-go
+  version: 77c0cb5a72cc9a57c715a4ccce23666178566f1c
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - internal/sdkio
+  - internal/sdkrand
+  - internal/shareddefaults
+  - private/protocol
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/xml/xmlutil
+  - service/sqs
+  - service/sts
+- name: github.com/go-ini/ini
+  version: bda519ae5f4cbc60d391ff8610711627a08b86ae
+- name: github.com/jmespath/go-jmespath
+  version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
+- name: github.com/rafaeljesus/rabbus
+  version: 15a5619c2bfa299a6f3aecc98a43791b5e0bcf25
+  subpackages:
+  - internal/amqp
+- name: github.com/rafaeljesus/retry-go
+  version: 5981a380a87925ee03a78a7ff13574fabc804837
+- name: github.com/sony/gobreaker
+  version: 3cb67c77c1d1e72fda30c6970578164d24f806b6
+- name: github.com/streadway/amqp
+  version: 8e4aba63da9fc5571e01c6a45dc809a58cbc5a68
 testImports: []
