@@ -4,3 +4,5 @@ import:
 - package: github.com/rafaeljesus/rabbus
 - package: github.com/rafaeljesus/retry-go
 - package: github.com/sony/gobreaker
+- package: github.com/globalsign/mgo
+- package: github.com/tkanos/gonfig

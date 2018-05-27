@@ -3,7 +3,7 @@ package test
 import (
 	"fmt"
 	"testing"
-	"github.com/darbs/atlas/entity"
+	"github.com/darbs/atlas/model"
 )
 
 func TestEntityParserEmpty(t *testing.T) {

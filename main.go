@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/darbs/barbatos-fwk/messenger"
+	"github.com/darbs/atlas/model"
 )
 
 /*
@@ -50,11 +51,12 @@ func write(w io.Writer) chan<- Message {
 func main() {
 	log.Println("Initializing Atlas")
 
+	var entity = entity.Entity{} // maybe rename this to model
+	log.Printf("Entity %v /n", entity)
 	var in = read(os.Stdin)
 	var mqurl = "localhost"
 	//var routeKey = "ATLAS_ROUTE"
-	var url = flag.String(
-		"url", "amqp:///", mqurl)
+	var url = flag.String("url", "amqp:///", mqurl)
 
 	var conf = messenger.Config{
 		Url: *url,
