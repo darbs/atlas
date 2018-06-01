@@ -1,5 +1,5 @@
 {
   "DbEndpoint": "localhost",
   "DbName": "Atlas",
-  "MqEndpoint": "amqp:///localhost"
+  "MqEndpoint": "amqp://localhost:5672"
 }

@@ -19,7 +19,7 @@ var (
 Entity struct
 */
 type Entity struct {
-	Locale    int64
+	Locale    int64   `json:"locale"`
 	Altitude  float32 `json:"altitude"`
 	Longitude float32 `json:"longitude"`
 	Latitude  float32 `json:"latitude"`

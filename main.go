@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"flag"
+	//"flag"
 	"fmt"
 	"context"
 	"log"
@@ -10,8 +10,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/darbs/atlas/configs"
 	"github.com/darbs/barbatos-fwk/messenger"
 	"github.com/darbs/atlas/model"
+	"github.com/tkanos/gonfig"
+)
+
+var (
+	config    configs.Configuration
 )
 
 /*
@@ -47,19 +53,11 @@ func write(w io.Writer) chan<- Message {
 	return lines
 }
 
-
-func main() {
-	log.Println("Initializing Atlas")
-
-	var entity = entity.Entity{} // maybe rename this to model
-	log.Printf("Entity %v /n", entity)
-	var in = read(os.Stdin)
-	var mqurl = "localhost"
-	//var routeKey = "ATLAS_ROUTE"
-	var url = flag.String("url", "amqp:///", mqurl)
+func initializeMqConnection(endpoint string) messenger.Connection{
+	log.Println("Initiliazing message connection")
 
 	var conf = messenger.Config{
-		Url: *url,
+		Url: endpoint,
 		Durable: true,
 		Attempts: 5,
 		Delay: time.Second * 2,
@@ -67,11 +65,27 @@ func main() {
 	}
 	var msgConn, err = messenger.GetConnection(conf)
 	if err != nil {
-		fmt.Errorf("Failed to connect to message queue")
-		os.Exit(1)
+		panic(fmt.Errorf("Failed to connect to message queue: %v", err))
 	}
 
-	log.Println("Initiliazing message connection")
+	return msgConn
+}
+
+
+func main() {
+	log.Println("Initializing Atlas")
+
+	var entity = entity.Entity{} // maybe rename this to model
+	log.Printf("Entity %v /n", entity)
+	var in = read(os.Stdin)
+
+	err := gonfig.GetConf("configs/dev.json", &config)
+	if err != nil {
+		panic(err)
+	}
+
+	msgConn := initializeMqConnection(config.MqEndpoint)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	go msgConn.Start(ctx)
 
