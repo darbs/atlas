@@ -2,5 +2,5 @@
 .DS_Store
 vendor
 
-dev.json
+configs/dev.json
 test.json
