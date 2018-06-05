@@ -5,14 +5,13 @@ import (
 	"errors"
 	"log"
 
-	"github.com/darbs/atlas/configs"
+	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/database"
-	"github.com/tkanos/gonfig"
 )
 
 var (
-	tableName = "Entity"
-	config    configs.Configuration
+	tableName  = "Entity"
+	conf    config.Configuration
 )
 
 /*
@@ -69,12 +68,8 @@ func FromJson(jsonStr string) (Entity, error) {
 func init() {
 	log.Println("Initializing Atlas - Entity")
 
-	err := gonfig.GetConf("configs/dev.json", &config)
-	if err != nil {
-		panic(err)
-	}
-
-	database.Configure(config.DbEndpoint, config.DbName)
+	conf = config.GetConfig()
+	database.Configure(conf.DbEndpoint, conf.DbName)
 
 	// Index
 	index := database.Index{
@@ -85,7 +80,7 @@ func init() {
 		Sparse:     true,
 	}
 
-	err = database.Database().Index(tableName, index)
+	err := database.Database().Index(tableName, index)
 	if err != nil {
 		panic(err)
 	}

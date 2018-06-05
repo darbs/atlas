@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	//"flag"
 	"fmt"
 	"context"
 	"log"
@@ -10,14 +9,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/darbs/atlas/configs"
+	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/messenger"
 	"github.com/darbs/atlas/model"
-	"github.com/tkanos/gonfig"
 )
 
 var (
-	config    configs.Configuration
+	conf config.Configuration
 )
 
 /*
@@ -79,12 +77,8 @@ func main() {
 	log.Printf("Entity %v /n", entity)
 	var in = read(os.Stdin)
 
-	err := gonfig.GetConf("configs/dev.json", &config)
-	if err != nil {
-		panic(err)
-	}
-
-	msgConn := initializeMqConnection(config.MqEndpoint)
+	conf := config.GetConfig()
+	msgConn := initializeMqConnection(conf.MqEndpoint)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go msgConn.Start(ctx)
