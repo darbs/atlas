@@ -1,64 +1,32 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
-	"io"
 	"os"
 	"time"
 
+	"github.com/darbs/atlas/model"
+	"github.com/darbs/barbatos-constants/constants"
 	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/messenger"
-	"github.com/darbs/atlas/model"
+	"github.com/globalsign/mgo/bson"
 )
 
 var (
 	conf config.Configuration
 )
 
-/*
-Message struct
- */
-type Message struct {
-	Content []byte
-}
-
-// read is this application's translation to the message format, scanning from
-// stdin.
-func read(r io.Reader) <-chan Message {
-	lines := make(chan Message)
-	go func() {
-		defer close(lines)
-		scan := bufio.NewScanner(r)
-		for scan.Scan() {
-			lines <- Message{Content: scan.Bytes()}
-		}
-	}()
-	return lines
-}
-
-// write is this application's subscriber of application messages, printing to
-// stdout.
-func write(w io.Writer) chan<- Message {
-	lines := make(chan Message)
-	go func() {
-		for msg := range lines {
-			fmt.Fprintln(w, string(msg.Content))
-		}
-	}()
-	return lines
-}
-
-func initializeMqConnection(endpoint string) messenger.Connection{
+func initializeMqConnection(endpoint string) messenger.Connection {
 	log.Println("Initiliazing message connection")
 
 	var conf = messenger.Config{
-		Url: endpoint,
-		Durable: true,
-		Attempts: 5,
-		Delay: time.Second * 2,
+		Url:       endpoint,
+		Durable:   true,
+		Attempts:  5,
+		Delay:     time.Second * 2,
 		Threshold: 4,
 	}
 	var msgConn, err = messenger.GetConnection(conf)
@@ -69,13 +37,75 @@ func initializeMqConnection(endpoint string) messenger.Connection{
 	return msgConn
 }
 
+func listenForEntityUpdate(conn messenger.Connection) {
+	msgChan, err := conn.Listen(
+		constants.AtlasEntityExchange,
+		messenger.ExchangeKindTopic,
+		constants.LocationUpdateKey,
+		constants.AtlasEntityUpdateQueue,
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to listen to queue - " + constants.AtlasEntityUpdateQueue + ": %v", err)
+		os.Exit(1)
+	}
+
+	for {
+		msg := <-msgChan
+		entity, err := model.EntityFromJson(msg.Data)
+		if err != nil {
+			log.Printf("Error parsing: %v msg: %v/n", err, msg)
+			// todo some sort of error tracking here
+			continue
+		}
+
+		err = entity.Save()
+		if err != nil {
+			log.Printf("Failed to save entity: %v", err)
+			continue
+		}
+
+		log.Printf("entity recieved: %v", entity.Altitude)
+	}
+}
+
+func listenForLocaleUpdate(conn messenger.Connection) {
+	msgChan, err := conn.Listen(
+		constants.AtlasLocaleExchange,
+		messenger.ExchangeKindTopic,
+		constants.LocaleUpdateKey,
+		constants.AtlasLocaleUpdateQueue,
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to listen to queue - " + constants.AtlasLocaleUpdateQueue + ": %v", err)
+		os.Exit(1)
+	}
+
+	for {
+		msg := <-msgChan
+		log.Printf("raw message: %v", msg)
+
+		entity, err := model.EntityFromJson(msg.Data)
+		if err != nil {
+			log.Printf("Error parsing: %v msg: %v/n", err, msg)
+			// todo some sort of error tracking here
+			continue
+		}
+
+		// TODO pull out correlationId and replyTo to attach to response message after fetching all entities from current local that are not you
+		log.Printf("local request recieved: %v", entity.Altitude)
+	}
+}
+
+func tearDown(cancel context.CancelFunc, connection messenger.Connection) {
+	log.Println("Atlas shutting down")
+	connection.Stop()
+	cancel()
+}
 
 func main() {
 	log.Println("Initializing Atlas")
-
-	var entity = entity.Entity{} // maybe rename this to model
-	log.Printf("Entity %v /n", entity)
-	var in = read(os.Stdin)
 
 	conf := config.GetConfig()
 	msgConn := initializeMqConnection(conf.MqEndpoint)
@@ -83,37 +113,60 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	go msgConn.Start(ctx)
 
-	defer func() {
-		cancel()
-		msgConn.Stop()
-	}()
+	defer tearDown(cancel, msgConn)
 
-	go func() {
-		msgChan, err := msgConn.Listen(
-			"test_ex",
-			"topic",
-			"test_key",
-			"consumer_test_q",
-			)
+	go listenForEntityUpdate(msgConn)
 
-		if err != nil {
-			fmt.Errorf("Failed to listen to queue")
-			os.Exit(1)
+	go listenForLocaleUpdate(msgConn)
+
+	////////////
+	// test chunk of code
+	////////////
+	locale := "ABC123DEF123"
+
+	for range time.Tick(time.Second * 5) {
+		ent := model.Entity{
+			Id: bson.NewObjectId().String(),
+			Locale:    locale,
+			Altitude:  4567,
+			Longitude: 1234,
+			Latitude:  1234,
+			Health:    100,
+			Mobile:    false,
 		}
 
-		for{
-			msg := <-msgChan
-			log.Printf("msg: %v", msg)
-		}
-	}()
-
-	for {
+		payload, _ := json.Marshal(ent)
+		//entity based
 		msgConn.Publish(
-			"test_ex",
-			"topic",
-			"test_key",
-			string((<-in).Content),
-			)
+			constants.AtlasEntityExchange,
+			messenger.ExchangeKindTopic,
+			constants.LocationUpdateKey,
+			payload,
+		)
+
+		ent2 := model.Entity{
+			Id: bson.NewObjectId().String(),
+			Locale:    locale,
+			Altitude:  9000,
+			Longitude: 1234,
+			Latitude:  1234,
+			Health:    100,
+			Mobile:    false,
+		}
+
+		payload2, _ := json.Marshal(ent2)
+		log.Printf("meh")
+		msgConn.Publish(
+			constants.AtlasLocaleExchange,
+			messenger.ExchangeKindTopic,
+			constants.LocaleUpdateKey,
+			payload2,
+		)
+
 	}
-	//<-ctx.Done()
+	////////////
+	////////////
+	////////////
+
+	<-ctx.Done()
 }

@@ -1,13 +1,18 @@
-hash: 798e8a42b0e2f8d28a02d4413896ef854e4c2d3199f234f831b5b4d269b5be28
-updated: 2018-05-31T22:59:34.623526-05:00
+hash: b35630f81d3fb43917688bb0914f7826ceeb7e8374a6bc2cb8b41fbe446d23a1
+updated: 2018-06-24T00:05:08.542661-05:00
 imports:
-- name: github.com/darbs/barbatos-fwk
-  version: adb1cf6fc6f093e41ad2d46401683f08f7920ec2
+- name: github.com/darbs/barbatos-constants
+  version: aeabbdd6d8dd8e88f43f3ec18b55162607170fe2
   subpackages:
+  - constants
+- name: github.com/darbs/barbatos-fwk
+  version: 73f3f5a478cb91f890118ced4f70b42121f8995c
+  subpackages:
+  - config
   - database
   - messenger
 - name: github.com/globalsign/mgo
-  version: efe0945164a7e582241f37ae8983c075f8f2e870
+  version: 113d3961e7311526535a1ef7042196563d442761
   subpackages:
   - bson
   - internal/json
