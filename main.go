@@ -98,6 +98,10 @@ func listenForLocaleUpdate(conn messenger.Connection) {
 	}
 }
 
+func publishLocaleUpdate(conn messenger.Connection) {
+
+}
+
 func tearDown(cancel context.CancelFunc, connection messenger.Connection) {
 	log.Println("Atlas shutting down")
 	connection.Stop()
@@ -155,7 +159,6 @@ func main() {
 		}
 
 		payload2, _ := json.Marshal(ent2)
-		log.Printf("meh")
 		msgConn.Publish(
 			constants.AtlasLocaleExchange,
 			messenger.ExchangeKindTopic,

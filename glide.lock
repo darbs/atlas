@@ -1,12 +1,12 @@
 hash: b35630f81d3fb43917688bb0914f7826ceeb7e8374a6bc2cb8b41fbe446d23a1
-updated: 2018-06-24T00:05:08.542661-05:00
+updated: 2018-07-02T20:47:45.607391-05:00
 imports:
 - name: github.com/darbs/barbatos-constants
   version: aeabbdd6d8dd8e88f43f3ec18b55162607170fe2
   subpackages:
   - constants
 - name: github.com/darbs/barbatos-fwk
-  version: 73f3f5a478cb91f890118ced4f70b42121f8995c
+  version: 8e7a466e0ba2638bce4a368db3bebcbab9e9a009
   subpackages:
   - config
   - database

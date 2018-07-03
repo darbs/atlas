@@ -3,17 +3,27 @@ package test
 import (
 	"fmt"
 	"log"
-	"os"
 	"testing"
+
 	"github.com/darbs/atlas/model"
 	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/database"
 )
 
 var (
-	validJson = "{\"Id\": \"ABC123\", \"latitude\": 30.307182, \"longitude\": -97.755996, \"altitude\": 489}"
-	tableName = "Entity"
+	entityJson = "{\"Id\": \"ABC123\", \"latitude\": 30.307182, \"longitude\": -97.755996, \"altitude\": 489}"
+	entityTable = "Entity"
+	entityId = "ID12345"
+	testLocale = "ABC123"
 )
+
+func init () {
+	log.Printf("Emptying Entity db for testing")
+	conf := config.GetConfig()
+	database.Configure(conf.DbEndpoint, conf.DbName)
+	db := database.GetDatabase()
+	db.Table(entityTable).Empty()
+}
 
 /////////
 // Unit
@@ -29,7 +39,7 @@ func TestEntityParserEmpty(t *testing.T) {
 
 func TestEntityParserValid(t *testing.T) {
 	t.Parallel()
-	entity, err := model.EntityFromJson(validJson)
+	entity, err := model.EntityFromJson(entityJson)
 	if err != nil {
 		fmt.Printf("Resulting entity: %v error: %v", entity, err)
 		t.Errorf("Failed to parse valid Object")
@@ -49,7 +59,7 @@ func TestEntityParserHealthInvalid(t *testing.T) {
 
 func TestEntityParserIdInvalid(t *testing.T) {
 	t.Parallel()
-	entity, err := model.EntityFromJson(validJson)
+	entity, err := model.EntityFromJson(entityJson)
 	entity.Id = ""
 
 	err = entity.Valid()
@@ -59,21 +69,18 @@ func TestEntityParserIdInvalid(t *testing.T) {
 	}
 }
 
-
 /////////////////
 // Integration //
 /////////////////
 
-var testId = "ID12345"
-
-func TestEntitySaveIntegration(t * testing.T) {
+func TestEntitySaveIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping TestEntitySaveIntegration")
 	}
 
 	entity := model.Entity{
-		Id: testId,
-		Locale:    "ABC123",
+		Id:        entityId,
+		Locale:    testLocale,
 		Altitude:  4567,
 		Longitude: 1234,
 		Latitude:  1234,
@@ -88,36 +95,48 @@ func TestEntitySaveIntegration(t * testing.T) {
 	}
 }
 
-func TestEntityFindByIdIntegration(t * testing.T) {
+func TestEntityFindByIdIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping TestEntitySaveIntegration")
 	}
 
-	entity, err := model.GetEntityById(testId)
+	entity, err := model.GetEntityById(entityId)
 	if err != nil {
 		t.Errorf("Failed to retrieve valid test Entity")
 	}
 
-	if entity.Id != testId {
+	if entity.Id != entityId {
 		t.Errorf("Failed to retrieve matching test Entity")
 		log.Printf("ERROR: %v", entity)
 	}
 }
 
-func setup () {
-	conf := config.GetConfig()
-	database.Configure(conf.DbEndpoint, conf.DbName)
-	db := database.Database()
-	table := db.Table(tableName)
+func TestGetEntitiesAtLocaleIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping TestEntityFindByIdIntegration")
+	}
 
-	table.Empty()
-}
+	entity := model.Entity{
+		Id:        entityId + "-1",
+		Locale:    testLocale,
+		Altitude:  4567,
+		Longitude: 1234,
+		Latitude:  1234,
+		Health:    100,
+		Mobile:    false,
+	}
+	err := entity.Save()
 
-func TestMain(m *testing.M) {
-	setup()
-	log.Println("TestMain")
-	code := m.Run()
+	entities, err := model.GetEntitiesAtLocale(testLocale)
+	if err != nil {
+		t.Errorf("Failed to query locale for entities")
+	}
 
-	//shutdown()
-	os.Exit(code)
+	if len(entities) != 2 {
+		t.Errorf("Failed to retrieve entities at local")
+	}
+
+	if entities[0].Locale != testLocale {
+		t.Errorf("Failed to retrieve entities at correct local")
+	}
 }
