@@ -99,7 +99,16 @@ func listenForLocaleUpdate(conn messenger.Connection) {
 }
 
 func publishLocaleUpdate(conn messenger.Connection) {
+	//msgChan, err := conn.Publish(
+	//	constants.AtlasLocaleExchange,
+	//	messenger.ExchangeKindTopic,
+	//	constants.LocaleUpdateKey,
+	//	payload2,
+	//)
 
+	//if err != nil {
+	//	log.Fatalf("Failed to listen to queue - " + constants.AtlasLocaleUpdateQueue + ": %v", err)
+	//}
 }
 
 func tearDown(cancel context.CancelFunc, connection messenger.Connection) {
@@ -115,9 +124,9 @@ func main() {
 	msgConn := initializeMqConnection(conf.MqEndpoint)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go msgConn.Start(ctx)
-
 	defer tearDown(cancel, msgConn)
+
+	go msgConn.Start(ctx)
 
 	go listenForEntityUpdate(msgConn)
 

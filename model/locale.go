@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/database"
@@ -14,9 +15,10 @@ var (
 
 // Locale struct
 type Locale struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Area int32  `json:"area"` // todo maybe large area?
+	Id        string    `json:"id"`
+	Name      string    `json:"name"`
+	Area      int32     `json:"area"` // todo maybe large area?
+	timestamp time.Time `json:"timestamp"`
 }
 
 // Validate a locale structure
@@ -32,6 +34,10 @@ func (e Locale) Save() error {
 	}
 
 	table := database.GetDatabase().Table(localeTable)
+	if e.timestamp.IsZero() {
+		e.timestamp = time.Now()
+	}
+
 	err = table.Insert(e)
 	if err != nil {
 		return err

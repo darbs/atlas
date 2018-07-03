@@ -28,7 +28,7 @@ type Entity struct {
 	Latitude  float32   `json:"latitude"`
 	Health    float32   `json:"health"`
 	Mobile    bool      `json:"mobile"`
-	Timestamp time.Time `json:"timestamp"`
+	timestamp time.Time `json:"timestamp"`
 }
 
 // Validate an entities structure
