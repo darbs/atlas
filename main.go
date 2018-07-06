@@ -120,8 +120,13 @@ func tearDown(cancel context.CancelFunc, connection messenger.Connection) {
 }
 
 func init() {
+	loglevel, err := logrus.ParseLevel(os.Getenv("LOG_LEVEL"))
+	if err != nil {
+		panic(err)
+	}
+
 	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(loglevel)
 }
 
 func main() {
