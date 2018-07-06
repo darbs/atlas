@@ -1,5 +1,5 @@
-hash: b35630f81d3fb43917688bb0914f7826ceeb7e8374a6bc2cb8b41fbe446d23a1
-updated: 2018-07-05T20:39:34.640637-05:00
+hash: aeabf3e4fd5acc5cff1d266c951c085007e356b778995b036fd1e57fbd5f7108
+updated: 2018-07-05T21:03:41.321078-05:00
 imports:
 - name: github.com/darbs/barbatos-constants
   version: 7651092a97a8cf84ac1c495fa503819dbe73eb5d
@@ -24,10 +24,21 @@ imports:
   - internal/amqp
 - name: github.com/rafaeljesus/retry-go
   version: 5981a380a87925ee03a78a7ff13574fabc804837
+- name: github.com/sirupsen/logrus
+  version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: github.com/sony/gobreaker
   version: 3cb67c77c1d1e72fda30c6970578164d24f806b6
 - name: github.com/streadway/amqp
   version: e5adc2ada8b8efff032bf61173a233d143e9318e
 - name: github.com/tkanos/gonfig
   version: 140e7c7ecea9170d71a841e208b86685c845eb53
+- name: golang.org/x/crypto
+  version: a49355c7e3f8fe157a85be2f77e6e269a0f89602
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/sys
+  version: 151529c776cdc58ddbe7963ba9af779f3577b419
+  subpackages:
+  - unix
+  - windows
 testImports: []

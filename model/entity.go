@@ -3,11 +3,11 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/database"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -99,7 +99,7 @@ func EntityFromJson(jsonStr string) (Entity, error) {
 
 // Initialize Atlas entity
 func init() {
-	log.Println("Initializing Atlas - Entity")
+	log.Info("Initializing Atlas - Entity")
 
 	conf := config.GetConfig()
 	database.Configure(conf.DbEndpoint, conf.DbName)

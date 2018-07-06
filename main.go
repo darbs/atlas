@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -13,10 +12,14 @@ import (
 	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/messenger"
 	"github.com/globalsign/mgo/bson"
+	"github.com/sirupsen/logrus"
 )
 
 var (
 	conf config.Configuration
+	log = logrus.WithFields(logrus.Fields{
+		"Component": "Atlas",
+	})
 )
 
 
@@ -55,18 +58,18 @@ func listenForEntityUpdate(conn messenger.Connection) {
 		msg := <-msgChan
 		entity, err := model.EntityFromJson(msg.Data)
 		if err != nil {
-			log.Printf("Error parsing: %v msg: %v/n", err, msg)
+			log.Info("Error parsing: %v msg: %v/n", err, msg)
 			// todo some sort of error tracking here
 			continue
 		}
 
 		err = entity.Save()
 		if err != nil {
-			log.Printf("Failed to save entity: %v", err)
+			log.Info("Failed to save entity: %v", err)
 			continue
 		}
 
-		log.Printf("entity recieved: %v", entity.Altitude)
+		log.Debugf("Entity recieved: %v", entity.Altitude)
 	}
 }
 
@@ -88,13 +91,14 @@ func listenForRpc(conn messenger.Connection) {
 		msg := <-msgChan
 		err := json.Unmarshal([]byte(msg.Data), &msgrcv)
 		if err != nil {
-			log.Printf("err: %v", err)
+			log.Printf("RPC Error: %v", err)
 			continue
 		}
 
-		log.Printf("rpc recieved: %v", msg.Data)
+		log.Debugf("RPC recieved: %v", msg.Data)
 		if msgrcv.ResponseId == "" {
-			log.Printf("No rpc response queue: %v", msgrcv)
+			log.Infof("No rpc response queue: %v", msgrcv)
+			continue
 		}
 
 		err = conn.Publish(
@@ -104,38 +108,8 @@ func listenForRpc(conn messenger.Connection) {
 			[]byte("klk"),
 		)
 		if err != nil {
-			log.Printf("Error responding to RPC: %v", err)
+			log.Infof("Error responding to RPC: %v", err)
 		}
-	}
-}
-
-func publishLocaleUpdate(conn messenger.Connection, localeId string) {
-	msgChan, err := conn.Listen(
-		constants.AtlasLocaleExchange,
-		messenger.ExchangeKindTopic,
-		constants.LocaleUpdateKey,
-		constants.AtlasLocaleUpdateQueue,
-	)
-
-	if err != nil {
-		log.Fatalf("Failed to listen to queue - " + constants.AtlasLocaleUpdateQueue + ": %v", err)
-		os.Exit(1)
-	}
-
-	for range time.Tick(time.Second * 2) {
-		msg := <-msgChan
-		log.Printf("raw message: %v", msg)
-
-		entity, err := model.EntityFromJson(msg.Data)
-		entity.Timestamp = time.Now().UTC()
-
-		if err != nil {
-			log.Printf("Error parsing: %v msg: %v/n", err, msg)
-			continue
-		}
-
-		log.Printf("local request recieved: %v", entity.Altitude)
-
 	}
 }
 
@@ -145,8 +119,13 @@ func tearDown(cancel context.CancelFunc, connection messenger.Connection) {
 	cancel()
 }
 
+func init() {
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.DebugLevel)
+}
+
 func main() {
-	log.Println("Initializing Atlas")
+	log.Println("Initializing")
 
 	conf := config.GetConfig()
 	msgConn := initializeMqConnection(conf.MqEndpoint)
@@ -182,7 +161,7 @@ func main() {
 	go func() {
 		for {
 			msg := <-msgChan
-			log.Printf("rpc publisher rcv: %v", msg)
+			log.Debugf("RPC publisher rcv: %v", msg)
 		}
 	}()
 
@@ -210,7 +189,7 @@ func main() {
 		msg := []byte(`{"Action":"INITIALIZE_LOCALE", "ResponseId": "` + rpc + `", "Data": { "name": "Hello", "Area": 30 }}`)
 		err := json.Unmarshal(msg, &mqMsg)
 		if err != nil {
-			log.Printf("ERR: %v", err)
+			log.Errorf("ERR: %v", err)
 		}
 
 		//payload2, _ := json.Marshal(mqMsg)

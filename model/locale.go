@@ -2,11 +2,11 @@ package model
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/darbs/barbatos-fwk/config"
 	"github.com/darbs/barbatos-fwk/database"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -73,7 +73,7 @@ func GetLocaleById(localeId string) (Locale, error) {
 
 // Initialize Atlas locale
 func init() {
-	log.Println("Initializing Atlas - Locale")
+	log.Info("Initializing Atlas - Locale")
 
 	conf := config.GetConfig()
 	database.Configure(conf.DbEndpoint, conf.DbName)

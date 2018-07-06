@@ -8,3 +8,5 @@ import:
 - package: github.com/tkanos/gonfig
 - package: github.com/darbs/barbatos-fwk
 - package: github.com/darbs/barbatos-constants
+- package: github.com/sirupsen/logrus
+  version: ^1.0.5
