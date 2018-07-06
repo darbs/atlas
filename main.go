@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/darbs/atlas/internal"
 	"github.com/darbs/atlas/model"
 	"github.com/darbs/barbatos-constants/constants"
 	"github.com/darbs/barbatos-fwk/config"
@@ -97,15 +98,26 @@ func listenForRpc(conn messenger.Connection) {
 
 		log.Debugf("RPC recieved: %v", msg.Data)
 		if msgrcv.ResponseId == "" {
-			log.Infof("No rpc response queue: %v", msgrcv)
+			log.Warnf("No rpc response queue: %v", msgrcv)
 			continue
+		}
+
+		if msgrcv.Action == "" {
+			log.Warnf("No provided action: %v", msgrcv)
+			continue
+		}
+
+		resp := actions.Handler(msgrcv.Action, msgrcv.Data)
+		payload, err := json.Marshal(resp)
+		if err != nil {
+			// todo error response
 		}
 
 		err = conn.Publish(
 			constants.AtlasCommandExchange,
 			messenger.ExchangeKindDirect,
 			msgrcv.ResponseId,
-			[]byte("klk"),
+			payload,
 		)
 		if err != nil {
 			log.Infof("Error responding to RPC: %v", err)
@@ -151,6 +163,8 @@ func main() {
 	////////////
 	locale := "ABC123DEF123"
 	rpc := "rpc-123-ABC"
+
+	// unique rpc pubsub
 	msgChan, err := msgConn.Listen(
 		constants.AtlasCommandExchange,
 		messenger.ExchangeKindDirect,
