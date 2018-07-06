@@ -14,11 +14,9 @@ var (
 	entityTable = "Entity"
 )
 
-/*
-Entity struct
-Note: 	when querying the attributes defined on the map
-		must equal the json parsed attributes
-*/
+// Entity struct
+// Note: 	when querying the attributes defined on the map
+// 			must equal the json parsed attributes
 type Entity struct {
 	Id        string    `json:"id"`
 	Locale    string    `json:"locale"`
@@ -28,7 +26,7 @@ type Entity struct {
 	Latitude  float32   `json:"latitude"`
 	Health    float32   `json:"health"`
 	Mobile    bool      `json:"mobile"`
-	timestamp time.Time `json:"timestamp"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // Validate an entities structure

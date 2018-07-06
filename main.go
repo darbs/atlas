@@ -19,6 +19,7 @@ var (
 	conf config.Configuration
 )
 
+
 func initializeMqConnection(endpoint string) messenger.Connection {
 	log.Println("Initiliazing message connection")
 
@@ -46,7 +47,7 @@ func listenForEntityUpdate(conn messenger.Connection) {
 	)
 
 	if err != nil {
-		log.Fatalf("Failed to listen to queue - " + constants.AtlasEntityUpdateQueue + ": %v", err)
+		log.Fatalf("Failed to listen to queue - "+constants.AtlasEntityUpdateQueue+": %v", err)
 		os.Exit(1)
 	}
 
@@ -69,7 +70,46 @@ func listenForEntityUpdate(conn messenger.Connection) {
 	}
 }
 
-func listenForLocaleUpdate(conn messenger.Connection) {
+func listenForRpc(conn messenger.Connection) {
+	msgChan, err := conn.Listen(
+		constants.AtlasCommandExchange,
+		messenger.ExchangeKindDirect,
+		constants.AtlasRpcKey,
+		constants.AtlasCommandQueue,
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to listen to queue - "+constants.AtlasEntityUpdateQueue+": %v", err)
+		os.Exit(1)
+	}
+
+	for {
+		var msgrcv messenger.RpcMessage
+		msg := <-msgChan
+		err := json.Unmarshal([]byte(msg.Data), &msgrcv)
+		if err != nil {
+			log.Printf("err: %v", err)
+			continue
+		}
+
+		log.Printf("rpc recieved: %v", msg.Data)
+		if msgrcv.ResponseId == "" {
+			log.Printf("No rpc response queue: %v", msgrcv)
+		}
+
+		err = conn.Publish(
+			constants.AtlasCommandExchange,
+			messenger.ExchangeKindDirect,
+			msgrcv.ResponseId,
+			[]byte("klk"),
+		)
+		if err != nil {
+			log.Printf("Error responding to RPC: %v", err)
+		}
+	}
+}
+
+func publishLocaleUpdate(conn messenger.Connection, localeId string) {
 	msgChan, err := conn.Listen(
 		constants.AtlasLocaleExchange,
 		messenger.ExchangeKindTopic,
@@ -82,33 +122,21 @@ func listenForLocaleUpdate(conn messenger.Connection) {
 		os.Exit(1)
 	}
 
-	for {
+	for range time.Tick(time.Second * 2) {
 		msg := <-msgChan
 		log.Printf("raw message: %v", msg)
 
 		entity, err := model.EntityFromJson(msg.Data)
+		entity.Timestamp = time.Now().UTC()
+
 		if err != nil {
 			log.Printf("Error parsing: %v msg: %v/n", err, msg)
-			// todo some sort of error tracking here
 			continue
 		}
 
-		// TODO pull out correlationId and replyTo to attach to response message after fetching all entities from current local that are not you
 		log.Printf("local request recieved: %v", entity.Altitude)
+
 	}
-}
-
-func publishLocaleUpdate(conn messenger.Connection) {
-	//msgChan, err := conn.Publish(
-	//	constants.AtlasLocaleExchange,
-	//	messenger.ExchangeKindTopic,
-	//	constants.LocaleUpdateKey,
-	//	payload2,
-	//)
-
-	//if err != nil {
-	//	log.Fatalf("Failed to listen to queue - " + constants.AtlasLocaleUpdateQueue + ": %v", err)
-	//}
 }
 
 func tearDown(cancel context.CancelFunc, connection messenger.Connection) {
@@ -130,16 +158,38 @@ func main() {
 
 	go listenForEntityUpdate(msgConn)
 
-	go listenForLocaleUpdate(msgConn)
+	go listenForRpc(msgConn)
+
+	//go publishLocaleUpdate(msgConn)
 
 	////////////
 	// test chunk of code
 	////////////
 	locale := "ABC123DEF123"
+	rpc := "rpc-123-ABC"
+	msgChan, err := msgConn.Listen(
+		constants.AtlasCommandExchange,
+		messenger.ExchangeKindDirect,
+		rpc,
+		rpc,
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to listen to queue - "+constants.AtlasEntityUpdateQueue+": %v", err)
+		os.Exit(1)
+	}
+
+	go func() {
+		for {
+			msg := <-msgChan
+			log.Printf("rpc publisher rcv: %v", msg)
+		}
+	}()
+
 
 	for range time.Tick(time.Second * 5) {
 		ent := model.Entity{
-			Id: bson.NewObjectId().String(),
+			Id:        bson.NewObjectId().String(),
 			Locale:    locale,
 			Altitude:  4567,
 			Longitude: 1234,
@@ -149,7 +199,6 @@ func main() {
 		}
 
 		payload, _ := json.Marshal(ent)
-		//entity based
 		msgConn.Publish(
 			constants.AtlasEntityExchange,
 			messenger.ExchangeKindTopic,
@@ -157,24 +206,20 @@ func main() {
 			payload,
 		)
 
-		ent2 := model.Entity{
-			Id: bson.NewObjectId().String(),
-			Locale:    locale,
-			Altitude:  9000,
-			Longitude: 1234,
-			Latitude:  1234,
-			Health:    100,
-			Mobile:    false,
+		var mqMsg interface{}
+		msg := []byte(`{"Action":"INITIALIZE_LOCALE", "ResponseId": "` + rpc + `", "Data": { "name": "Hello", "Area": 30 }}`)
+		err := json.Unmarshal(msg, &mqMsg)
+		if err != nil {
+			log.Printf("ERR: %v", err)
 		}
 
-		payload2, _ := json.Marshal(ent2)
+		//payload2, _ := json.Marshal(mqMsg)
 		msgConn.Publish(
-			constants.AtlasLocaleExchange,
-			messenger.ExchangeKindTopic,
-			constants.LocaleUpdateKey,
-			payload2,
+			constants.AtlasCommandExchange,
+			messenger.ExchangeKindDirect,
+			constants.AtlasRpcKey,
+			msg,
 		)
-
 	}
 	////////////
 	////////////

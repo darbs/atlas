@@ -18,7 +18,8 @@ type Locale struct {
 	Id        string    `json:"id"`
 	Name      string    `json:"name"`
 	Area      int32     `json:"area"` // todo maybe large area?
-	timestamp time.Time `json:"timestamp"`
+	Active    bool      `json:"active"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // Validate a locale structure
@@ -34,8 +35,8 @@ func (e Locale) Save() error {
 	}
 
 	table := database.GetDatabase().Table(localeTable)
-	if e.timestamp.IsZero() {
-		e.timestamp = time.Now()
+	if e.Timestamp.IsZero() {
+		e.Timestamp = time.Now().UTC()
 	}
 
 	err = table.Insert(e)
@@ -79,7 +80,7 @@ func init() {
 
 	// Index
 	index := database.Index{
-		Key:        []string{"name"},
+		Key:        []string{"name", "timestamp"},
 		Unique:     true,
 		Dups:       false,
 		Background: true,
