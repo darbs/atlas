@@ -18,7 +18,7 @@ var (
 type Locale struct {
 	Id        string    `json:"id"`
 	Name      string    `json:"name"`
-	Area      int32     `json:"area"` // todo maybe large area?
+	Area      int32     `json:"area"` // todo maybe large area? and should this be updateble?
 	Active    bool      `json:"active"`
 	Timestamp time.Time `json:"timestamp"`
 }
@@ -80,6 +80,19 @@ func GetLocaleById(localeId string) (Locale, error) {
 
 	var result []Locale
 	err := table.Find(database.Query{"id": localeId}, &result, -1)
+	if len(result) == 1 {
+		return result[0], err
+	}
+
+	return Locale{}, err
+}
+
+// Get locale by id and Name
+func GetLocaleByIdAndName(localeId string, localeName string) (Locale, error) {
+	table := database.GetDatabase().Table(localeTable)
+
+	var result []Locale
+	err := table.Find(database.Query{"id": localeId, "name": localeName}, &result, -1)
 	if len(result) == 1 {
 		return result[0], err
 	}

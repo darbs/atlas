@@ -18,7 +18,7 @@ var (
 )
 
 func init () {
-	log.Printf("Emptying Entity db for testing")
+	log.Printf("Emptying Entity db for testing model.Entity package")
 	conf := config.GetConfig()
 	database.Configure(conf.DbEndpoint, conf.DbName)
 	db := database.GetDatabase()

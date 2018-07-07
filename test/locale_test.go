@@ -18,7 +18,7 @@ var (
 )
 
 func init () {
-	log.Printf("Emptying Locale db for testing")
+	log.Printf("Emptying Locale db for testing model.Locale package")
 	conf := config.GetConfig()
 	database.Configure(conf.DbEndpoint, conf.DbName)
 	db := database.GetDatabase()

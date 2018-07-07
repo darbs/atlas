@@ -53,7 +53,7 @@ func parseLocale (data interface{}) (model.Locale, error) {
 	return locale, nil
 }
 
-//
+// open locale
 func openLocale(data interface{}) (interface{}, error) {
 	locale, err := parseLocale(data)
 	if err != nil {
@@ -75,19 +75,26 @@ func openLocale(data interface{}) (interface{}, error) {
 	return locale, err
 }
 
-// todo update close locale
-// cases:
-// 	1. locale exists open/close
-// 	2. locale does not exist
+// close locale
 func closeLocale(data interface{}) (interface{}, error) {
 	locale, err := parseLocale(data)
 	if err != nil {
 		return locale, err
 	}
 
-	return data, nil
+	locale, err = model.GetLocaleByIdAndName(locale.Id, locale.Name)
+	if err != nil {
+		return locale, err
+	}
+
+	locale.Active = false
+	log.Debugf("closing locale: %v", locale)
+
+	err = locale.Save()
+	return locale, err
 }
 
+// action handler
 func Handler(action string, data interface{}) ActionResponse {
 	var err error
 	var response interface{}
