@@ -1,12 +1,12 @@
 hash: aeabf3e4fd5acc5cff1d266c951c085007e356b778995b036fd1e57fbd5f7108
-updated: 2018-07-05T21:40:40.13502-05:00
+updated: 2018-07-06T20:35:40.018007-05:00
 imports:
 - name: github.com/darbs/barbatos-constants
-  version: 7651092a97a8cf84ac1c495fa503819dbe73eb5d
+  version: 15a211f7897f08d8443cb9e2dd8cee7b87822f1f
   subpackages:
   - constants
 - name: github.com/darbs/barbatos-fwk
-  version: 9d80b03f4413b1b8ef5057aabe3f228dda383fd3
+  version: 0fabbac1c443258f9519cf868f6b8f01b856a0a5
   subpackages:
   - config
   - database
@@ -37,7 +37,7 @@ imports:
   subpackages:
   - ssh/terminal
 - name: golang.org/x/sys
-  version: 151529c776cdc58ddbe7963ba9af779f3577b419
+  version: 3c6ecd8f22c6f40fbeec94c000a069d7d87c7624
   subpackages:
   - unix
   - windows

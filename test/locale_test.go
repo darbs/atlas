@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/darbs/atlas/model"
 	"github.com/darbs/barbatos-fwk/config"
@@ -80,6 +81,7 @@ func TestLocaleSaveIntegration(t *testing.T) {
 	locale := model.Locale{
 		Id:   localeId,
 		Name: "some locale",
+		Timestamp: time.Now().UTC(),
 	}
 
 	err := locale.Save()
@@ -98,6 +100,7 @@ func TestGetLocaleByIdIntegration(t *testing.T) {
 	newLocale := model.Locale{
 		Id:   id,
 		Name: "mt. fuji",
+		Timestamp: time.Now().UTC(),
 	}
 	err := newLocale.Save()
 

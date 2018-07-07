@@ -11,8 +11,8 @@ import (
 	"github.com/darbs/atlas/model"
 	"github.com/darbs/barbatos-constants/constants"
 	"github.com/darbs/barbatos-fwk/config"
+	"github.com/darbs/barbatos-fwk/database"
 	"github.com/darbs/barbatos-fwk/messenger"
-	"github.com/globalsign/mgo/bson"
 	"github.com/sirupsen/logrus"
 )
 
@@ -96,7 +96,7 @@ func listenForRpc(conn messenger.Connection) {
 			continue
 		}
 
-		log.Debugf("RPC recieved: %v", msg.Data)
+		log.Debugf("RPC received: %v", msg.Data)
 		if msgrcv.ResponseId == "" {
 			log.Warnf("No rpc response queue: %v", msgrcv)
 			continue
@@ -187,7 +187,7 @@ func main() {
 
 	for range time.Tick(time.Second * 5) {
 		ent := model.Entity{
-			Id:        bson.NewObjectId().String(),
+			Id:        database.GetNewObjectId(),
 			Locale:    locale,
 			Altitude:  4567,
 			Longitude: 1234,
@@ -205,7 +205,7 @@ func main() {
 		)
 
 		var mqMsg interface{}
-		msg := []byte(`{"Action":"INITIALIZE_LOCALE", "ResponseId": "` + rpc + `", "Data": { "name": "Hello", "Area": 30 }}`)
+		msg := []byte(`{"Action":"` + actions.OpenLocale + `", "ResponseId": "` + rpc + `", "Data": { "name": "Hello", "area": 30 }}`)
 		err := json.Unmarshal(msg, &mqMsg)
 		if err != nil {
 			log.Errorf("ERR: %v", err)

@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/darbs/barbatos-fwk/config"
@@ -23,23 +24,38 @@ type Locale struct {
 }
 
 // Validate a locale structure
-func (e Locale) Valid() error {
+func (l Locale) Valid() error {
+	if l.Id == "" {
+		return fmt.Errorf("locale must have an Id")
+	}
+
+	if l.Name == "" {
+		return fmt.Errorf("locale must have an Name")
+	}
+
+	// restrict the size to something reasonable
+	if l.Area < 0 {
+		return fmt.Errorf("locale must have an Area")
+	}
+
+	if l.Timestamp.IsZero() {
+		return fmt.Errorf("locale must have an Timestamp")
+	}
+
 	return nil
 }
 
 // Save locale
-func (e Locale) Save() error {
-	err := e.Valid()
+func (l Locale) Save() error {
+	err := l.Valid()
 	if err != nil {
 		return err
 	}
 
 	table := database.GetDatabase().Table(localeTable)
-	if e.Timestamp.IsZero() {
-		e.Timestamp = time.Now().UTC()
-	}
 
-	err = table.Insert(e)
+	// todo maybe return the changelog?
+	_, err = table.Upsert(database.Query{"id":l.Id, "name": l.Name}, l)
 	if err != nil {
 		return err
 	}
@@ -80,7 +96,7 @@ func init() {
 
 	// Index
 	index := database.Index{
-		Key:        []string{"name", "timestamp"},
+		Key:        []string{"id", "name"},
 		Unique:     true,
 		Dups:       false,
 		Background: true,
