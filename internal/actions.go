@@ -1,4 +1,4 @@
-package actions
+package internal
 
 import (
 	"encoding/json"
@@ -19,6 +19,10 @@ const (
 	CloseLocale         = "CLOSE_LOCALE"
 )
 
+var (
+	activeLocales map[string]interface{}
+)
+
 // maybe timestamp?
 // Response interface
 type ActionResponse struct {
@@ -37,7 +41,7 @@ Only allow entities manipulate locales they exist in
  */
 
 // parse string map into local struct
-func parseLocale (data interface{}) (model.Locale, error) {
+func parseLocale(data interface{}) (model.Locale, error) {
 	var locale model.Locale
 
 	mData, err := json.Marshal(data)
@@ -72,6 +76,11 @@ func openLocale(data interface{}) (interface{}, error) {
 	log.Debugf("opening locale: %v", locale)
 
 	err = locale.Save()
+	if err == nil && activeLocales[locale.Id] == nil {
+		//activeLocales[locale.Id] = make(chan string)
+
+	}
+
 	return locale, err
 }
 
@@ -91,11 +100,15 @@ func closeLocale(data interface{}) (interface{}, error) {
 	log.Debugf("closing locale: %v", locale)
 
 	err = locale.Save()
+	if activeLocales[locale.Id] != nil {
+		delete(activeLocales, locale.Id)
+	}
+
 	return locale, err
 }
 
 // action handler
-func Handler(action string, data interface{}) ActionResponse {
+func ActionHandler(action string, data interface{}) ActionResponse {
 	var err error
 	var response interface{}
 

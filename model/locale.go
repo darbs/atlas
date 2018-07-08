@@ -23,6 +23,29 @@ type Locale struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
+// Initialize Atlas locale
+func init() {
+	log.Info("Initializing Atlas - Locale")
+
+	conf := config.GetConfig()
+	database.Configure(conf.DbEndpoint, conf.DbName)
+
+	// Index
+	index := database.Index{
+		Key:        []string{"id", "name"},
+		Unique:     true,
+		Dups:       false,
+		Background: true,
+		Sparse:     true,
+	}
+
+	table := database.GetDatabase().Table(localeTable)
+	err := table.Index(index)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // Validate a locale structure
 func (l Locale) Valid() error {
 	if l.Id == "" {
@@ -98,27 +121,4 @@ func GetLocaleByIdAndName(localeId string, localeName string) (Locale, error) {
 	}
 
 	return Locale{}, err
-}
-
-// Initialize Atlas locale
-func init() {
-	log.Info("Initializing Atlas - Locale")
-
-	conf := config.GetConfig()
-	database.Configure(conf.DbEndpoint, conf.DbName)
-
-	// Index
-	index := database.Index{
-		Key:        []string{"id", "name"},
-		Unique:     true,
-		Dups:       false,
-		Background: true,
-		Sparse:     true,
-	}
-
-	table := database.GetDatabase().Table(localeTable)
-	err := table.Index(index)
-	if err != nil {
-		panic(err)
-	}
 }

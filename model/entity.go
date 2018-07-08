@@ -2,7 +2,7 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/darbs/barbatos-fwk/config"
@@ -19,8 +19,8 @@ var (
 // 			must equal the json parsed attributes
 type Entity struct {
 	Id        string    `json:"id"`
-	Locale    string    `json:"locale"`
-	Ally      bool      `json:"ally"`
+	LocaleId  string    `json:"localeId"`
+	Friendly  bool      `json:"ally"`
 	Altitude  float32   `json:"altitude"`
 	Longitude float32   `json:"longitude"`
 	Latitude  float32   `json:"latitude"`
@@ -29,14 +29,41 @@ type Entity struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
+// Initialize Atlas entity
+func init() {
+	log.Info("Initializing Atlas - Entity")
+
+	conf := config.GetConfig()
+	database.Configure(conf.DbEndpoint, conf.DbName)
+
+	// Index
+	index := database.Index{
+		Key:        []string{"Id", "LocaleId"},
+		Unique:     true,
+		Dups:       false,
+		Background: true,
+		Sparse:     true,
+	}
+
+	table := database.GetDatabase().Table(entityTable)
+	err := table.Index(index)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // Validate an entities structure
 func (e Entity) Valid() error {
 	if e.Health < 0 {
-		return errors.New("health must be greater than zero")
+		return fmt.Errorf("health must be greater than zero")
 	}
 
 	if e.Id == "" {
-		return errors.New("entity must have an Id")
+		return fmt.Errorf("entity must have an Id")
+	}
+
+	if e.Timestamp.IsZero() {
+		return fmt.Errorf("entity must have an Timestamp")
 	}
 
 	return nil
@@ -60,15 +87,15 @@ func (e Entity) Save() error {
 
 // Get entities at a corresponding entity locale
 func (e Entity) GetLocalEntities() ([]Entity, error) {
-	return GetEntitiesAtLocale(e.Locale)
+	return GetEntitiesAtLocale(e.LocaleId)
 }
 
 // Get all entities at a locale
-func GetEntitiesAtLocale(locale string) ([]Entity, error) {
+func GetEntitiesAtLocale(localeId string) ([]Entity, error) {
 	table := database.GetDatabase().Table(entityTable)
 
 	var result []Entity
-	err := table.Find(database.Query{"locale": locale}, &result, -1)
+	err := table.Find(database.Query{"localeid": localeId}, &result, -1)
 	return result, err
 }
 
@@ -93,29 +120,5 @@ func EntityFromJson(jsonStr string) (Entity, error) {
 		return entity, err
 	}
 
-	// TODO invalid entity from json
 	return entity, err
-}
-
-// Initialize Atlas entity
-func init() {
-	log.Info("Initializing Atlas - Entity")
-
-	conf := config.GetConfig()
-	database.Configure(conf.DbEndpoint, conf.DbName)
-
-	// Index
-	index := database.Index{
-		Key:        []string{"Locale"},
-		Unique:     true,
-		Dups:       false,
-		Background: true,
-		Sparse:     true,
-	}
-
-	table := database.GetDatabase().Table(entityTable)
-	err := table.Index(index)
-	if err != nil {
-		panic(err)
-	}
 }

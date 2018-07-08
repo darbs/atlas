@@ -113,3 +113,21 @@ func TestGetLocaleByIdIntegration(t *testing.T) {
 		t.Errorf("Failed to retrieve locale")
 	}
 }
+
+func TestGetLocaleByIdAndNameIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping TestGetLocaleByIdAndNameIntegration")
+	}
+
+	id := localeId + "-1"
+	name := "mt. fuji"
+
+	locale, err := model.GetLocaleByIdAndName(id, name)
+	if err != nil {
+		t.Errorf("Failed to query locale for entities")
+	}
+
+	if locale.Id != id || locale.Name != name {
+		t.Errorf("Failed to retrieve locale by id and name")
+	}
+}

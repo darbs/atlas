@@ -33,8 +33,8 @@ func TestActionOpenLocaleNewIntegration(t *testing.T) {
 		Active: false,
 		Area: 345,
 	}
-	response := actions.Handler(actions.OpenLocale, locale)
-	if response.Type != actions.ActionStatusSuccess {
+	response := internal.ActionHandler(internal.OpenLocale, locale)
+	if response.Type != internal.ActionStatusSuccess {
 		fmt.Printf("Resulting response: %v", response)
 		t.Errorf("Failed to open valid locale")
 	}
@@ -68,8 +68,8 @@ func TestActionOpenLocaleValidIntegration(t *testing.T) {
 		Active: false,
 		Area: 345,
 	}
-	response := actions.Handler(actions.OpenLocale, locale)
-	if response.Type != actions.ActionStatusSuccess {
+	response := internal.ActionHandler(internal.OpenLocale, locale)
+	if response.Type != internal.ActionStatusSuccess {
 		fmt.Printf("Resulting response: %v", response)
 		t.Errorf("Failed to open valid locale")
 	}
@@ -96,8 +96,8 @@ func TestActionCloseLocaleIntegration(t *testing.T) {
 		Active: true,
 		Area: 345,
 	}
-	response := actions.Handler(actions.CloseLocale, locale)
-	if response.Type != actions.ActionStatusSuccess {
+	response := internal.ActionHandler(internal.CloseLocale, locale)
+	if response.Type != internal.ActionStatusSuccess {
 		fmt.Printf("Resulting response: %v", response)
 		t.Errorf("Failed to open valid locale")
 	}
@@ -132,8 +132,8 @@ func TestActionCloseLocaleMissingIntegration(t *testing.T) {
 		Active: true,
 		Area: 345,
 	}
-	response := actions.Handler(actions.CloseLocale, locale)
-	if response.Type == actions.ActionStatusSuccess {
+	response := internal.ActionHandler(internal.CloseLocale, locale)
+	if response.Type == internal.ActionStatusSuccess {
 		fmt.Printf("Resulting response: %v", response)
 		t.Errorf("Failed to open valid locale")
 	}

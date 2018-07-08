@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/darbs/atlas/model"
 	"github.com/darbs/barbatos-fwk/config"
@@ -11,13 +12,13 @@ import (
 )
 
 var (
-	entityJson = "{\"Id\": \"ABC123\", \"latitude\": 30.307182, \"longitude\": -97.755996, \"altitude\": 489}"
+	entityJson  = "{\"Id\": \"ABC123\", \"latitude\": 30.307182, \"longitude\": -97.755996, \"altitude\": 489}"
 	entityTable = "Entity"
-	entityId = "ID12345"
-	testLocale = "ABC123"
+	entityId    = "ID12345"
+	testLocale  = "ABC123"
 )
 
-func init () {
+func init() {
 	log.Printf("Emptying Entity db for testing model.Entity package")
 	conf := config.GetConfig()
 	database.Configure(conf.DbEndpoint, conf.DbName)
@@ -80,12 +81,13 @@ func TestEntitySaveIntegration(t *testing.T) {
 
 	entity := model.Entity{
 		Id:        entityId,
-		Locale:    testLocale,
+		LocaleId:  testLocale,
 		Altitude:  4567,
 		Longitude: 1234,
 		Latitude:  1234,
 		Health:    100,
 		Mobile:    false,
+		Timestamp: time.Now().UTC(),
 	}
 
 	err := entity.Save()
@@ -107,7 +109,6 @@ func TestEntityFindByIdIntegration(t *testing.T) {
 
 	if entity.Id != entityId {
 		t.Errorf("Failed to retrieve matching test Entity")
-		log.Printf("ERROR: %v", entity)
 	}
 }
 
@@ -118,12 +119,13 @@ func TestGetEntitiesAtLocaleIntegration(t *testing.T) {
 
 	entity := model.Entity{
 		Id:        entityId + "-1",
-		Locale:    testLocale,
+		LocaleId:  testLocale,
 		Altitude:  4567,
 		Longitude: 1234,
 		Latitude:  1234,
 		Health:    100,
 		Mobile:    false,
+		Timestamp: time.Now().UTC(),
 	}
 	err := entity.Save()
 
@@ -136,7 +138,7 @@ func TestGetEntitiesAtLocaleIntegration(t *testing.T) {
 		t.Errorf("Failed to retrieve entities at local")
 	}
 
-	if entities[0].Locale != testLocale {
+	if entities[0].LocaleId != testLocale {
 		t.Errorf("Failed to retrieve entities at correct local")
 	}
 }
