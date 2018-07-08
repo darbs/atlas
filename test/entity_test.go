@@ -70,6 +70,18 @@ func TestEntityParserIdInvalid(t *testing.T) {
 	}
 }
 
+func TestEntityParserLocaleInvalid(t *testing.T) {
+	t.Parallel()
+	entity, err := model.EntityFromJson(entityJson)
+	entity.LocaleId = ""
+
+	err = entity.Valid()
+	if err == nil {
+		fmt.Printf("Resulting entity: %v error: %v", entity, err)
+		t.Errorf("Failed to catch missing locale id")
+	}
+}
+
 /////////////////
 // Integration //
 /////////////////

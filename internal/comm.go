@@ -82,7 +82,7 @@ func ListenForEntityUpdate() {
 			continue
 		}
 
-		log.Debugf("Entity recieved: %v", entity.Altitude)
+		log.Debugf("Entity received: %v", entity)
 	}
 }
 
@@ -137,25 +137,16 @@ func ListenForRpc() {
 	}
 }
 
-// TODO channel to trigger
-// TODO channel to close routine
-func BroadcastLocaleUpdates (localeId string) error {
-	entities, err :=  model.GetEntitiesAtLocale(localeId)
-	if err != nil {
-		return fmt.Errorf("error retrieving entities to broadcast for locale %v: %v", localeId, err)
-	}
-
-	resp := map[string] interface{}{}
-	resp["entities"] = entities
-	jsonResp, err := json.Marshal(resp)
+func BroadcastToLocale (payload map[string] interface{}) error {
+	jsonResp, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("error marshalling response: %v", err)
 	}
 
 	err = connection.Publish(
-		constants.AtlasCommandExchange,
-		messenger.ExchangeKindDirect,
-		constants.AtlasRpcKey,
+		constants.AtlasLocaleExchange,
+		messenger.ExchangeKindTopic,
+		constants.LocaleUpdateKey,
 		jsonResp,
 	)
 	return err

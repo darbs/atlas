@@ -17,10 +17,11 @@ const (
 	ActionStatusError   = "error"
 	OpenLocale          = "OPEN_LOCALE"
 	CloseLocale         = "CLOSE_LOCALE"
+	BroadcastInterval   = 5
 )
 
 var (
-	activeLocales map[string]interface{}
+	activeLocales map[string]chan bool
 )
 
 // maybe timestamp?
@@ -35,10 +36,50 @@ type ActionError struct {
 	Message string
 }
 
+func init() {
+	activeLocales = make(map[string]chan bool)
+}
+
+// convert entities to a response
+func getLocaleUpdate(localeId string) (map[string]interface{}, error) {
+	resp := map[string]interface{}{}
+
+	entities, err := model.GetEntitiesAtLocale(localeId)
+	if err != nil {
+		return resp, fmt.Errorf("error retrieving entities to broadcast for locale %v: %v", localeId, err)
+	}
+
+	resp["entities"] = entities
+	if err != nil {
+		return resp, fmt.Errorf("error marshalling response: %v", err)
+	}
+
+	return resp, nil
+}
+
 /*
 Notes:
 Only allow entities manipulate locales they exist in
  */
+
+func broadcastLocale(localeId string, stop chan bool) error {
+	ticker := time.NewTicker(BroadcastInterval * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			log.Debugf("Broadcasting locale update to %v", localeId)
+			// todo ensure the query never takes more than BroadcastInterval time
+			resp, _ := getLocaleUpdate(localeId)
+			err := BroadcastToLocale(resp)
+			if err != nil {
+				log.Warnf("Error broadcasting: %v", err)
+			}
+		case <-stop:
+			ticker.Stop()
+			log.Debug("Stopping broadcast")
+		}
+	}
+}
 
 // parse string map into local struct
 func parseLocale(data interface{}) (model.Locale, error) {
@@ -77,11 +118,12 @@ func openLocale(data interface{}) (interface{}, error) {
 
 	err = locale.Save()
 	if err == nil && activeLocales[locale.Id] == nil {
-		//activeLocales[locale.Id] = make(chan string)
-
+		activeLocales[locale.Id] = make(chan bool, 1)
+		go broadcastLocale(locale.Id, activeLocales[locale.Id])
 	}
 
 	return locale, err
+
 }
 
 // close locale
@@ -101,6 +143,7 @@ func closeLocale(data interface{}) (interface{}, error) {
 
 	err = locale.Save()
 	if activeLocales[locale.Id] != nil {
+		activeLocales[locale.Id] <- true
 		delete(activeLocales, locale.Id)
 	}
 

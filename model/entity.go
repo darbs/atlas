@@ -62,6 +62,10 @@ func (e Entity) Valid() error {
 		return fmt.Errorf("entity must have an Id")
 	}
 
+	if e.LocaleId == "" {
+		return fmt.Errorf("entity must have a locale")
+	}
+
 	if e.Timestamp.IsZero() {
 		return fmt.Errorf("entity must have an Timestamp")
 	}

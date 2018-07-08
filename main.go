@@ -51,12 +51,13 @@ func main() {
 	////////////
 	// test chunk of code
 	////////////
+	userLocaleChan := make(chan string) // emulate api req
 	msgConn := internal.Connection()
 	locale := "ABC123DEF123"
 	rpc := "rpc-123-ABC"
 
 	// unique rpc pubsub
-	msgChan, err := msgConn.Listen(
+	rpcChan, err := msgConn.Listen(
 		constants.AtlasCommandExchange,
 		messenger.ExchangeKindDirect,
 		rpc,
@@ -64,9 +65,17 @@ func main() {
 	)
 
 	if err != nil {
-		log.Fatalf("Failed to listen to queue - "+constants.AtlasEntityUpdateQueue+": %v", err)
+		log.Fatalf("Failed to listen to queue - "+rpc+": %v", err)
 		os.Exit(1)
 	}
+
+	go func() {
+		for {
+			msg := <-rpcChan
+			log.Debugf("RPC publisher rcv: %v", msg)
+			userLocaleChan <- msg.Data
+		}
+	}()
 
 	/////////
 	// test rpc action call
@@ -91,36 +100,67 @@ func main() {
 		payload,
 	)
 
+	/////////
+	// entity locale update
+	localeChan, err := msgConn.Listen(
+		constants.AtlasLocaleExchange,
+		messenger.ExchangeKindTopic,
+		constants.LocaleUpdateKey,
+		constants.AtlasLocaleUpdateQueue,
+	)
+
 	go func() {
 		for {
-			msg := <-msgChan
-			log.Debugf("RPC publisher rcv: %v", msg)
+			msg := <-localeChan
+			log.Debugf("Client locale listener rcv: %v", msg)
 		}
 	}()
 
-	// todo publish entity updates
-	////////
-
-	for range time.Tick(time.Second * 5) {
-		ent := model.Entity{
-			Id:        database.GetNewObjectId(),
-			LocaleId:  locale,
-			Altitude:  4567,
-			Longitude: 1234,
-			Latitude:  1234,
-			Health:    100,
-			Mobile:    false,
-			Timestamp: time.Now().UTC(),
+	/////////
+	// client example listener
+	go func() {
+		var resp internal.ActionResponse
+		raw := <-userLocaleChan
+		err := json.Unmarshal([]byte(raw), &resp)
+		if err != nil {
+			log.Debugf("OOPSIE DAISY: %v", err)
+			return
 		}
 
-		payload, _ := json.Marshal(ent)
-		msgConn.Publish(
-			constants.AtlasEntityExchange,
-			messenger.ExchangeKindTopic,
-			constants.LocationUpdateKey,
-			payload,
-		)
-	}
+		if resp.Type == internal.ActionStatusError {
+			log.Debugf("RESP ERROR: %v", err)
+			os.Exit(1)
+		}
+
+		var locale model.Locale
+		localeData, _ := json.Marshal(resp.Data)
+		json.Unmarshal(localeData, &locale)
+		log.Debugf("Client received locale %v", locale)
+
+		numOfEntities := 5
+		for numOfEntities > 0 {
+			ent := model.Entity{
+				Id:        database.GetNewObjectId(),
+				LocaleId:  locale.Id,
+				Altitude:  4567,
+				Longitude: 1234,
+				Latitude:  1234,
+				Health:    100,
+				Mobile:    false,
+				Timestamp: time.Now().UTC(),
+			}
+
+			payload, _ := json.Marshal(ent)
+			msgConn.Publish(
+				constants.AtlasEntityExchange,
+				messenger.ExchangeKindTopic,
+				constants.LocationUpdateKey,
+				payload,
+			)
+
+			numOfEntities--
+		}
+	}()
 	////////////
 	////////////
 	////////////
