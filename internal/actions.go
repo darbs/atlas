@@ -17,7 +17,7 @@ const (
 	ActionStatusError   = "error"
 	OpenLocale          = "OPEN_LOCALE"
 	CloseLocale         = "CLOSE_LOCALE"
-	BroadcastInterval   = 5
+	BroadcastInterval   = 1
 )
 
 var (
@@ -67,16 +67,15 @@ func broadcastLocale(localeId string, stop chan bool) error {
 	for {
 		select {
 		case <-ticker.C:
-			log.Debugf("Broadcasting locale update to %v", localeId)
 			// todo ensure the query never takes more than BroadcastInterval time
 			resp, _ := getLocaleUpdate(localeId)
-			err := BroadcastToLocale(resp)
+			err := BroadcastToLocale(localeId, resp)
 			if err != nil {
 				log.Warnf("Error broadcasting: %v", err)
 			}
 		case <-stop:
 			ticker.Stop()
-			log.Debug("Stopping broadcast")
+			log.Debug("Manually stopping broadcast")
 		}
 	}
 }
@@ -169,4 +168,12 @@ func ActionHandler(action string, data interface{}) ActionResponse {
 	}
 
 	return ActionResponse{ActionStatusSuccess, response}
+}
+
+func ActionShutdown() {
+	log.Debugf("Shutting down Atlas action channels")
+	for k, v := range activeLocales {
+		v <- true
+		delete(activeLocales, k)
+	}
 }

@@ -33,7 +33,7 @@ func init() {
 		Threshold: 4,
 	})
 	if err != nil {
-		panic(fmt.Errorf("Failed to connect to message queue: %v", err))
+		panic(fmt.Errorf("failed to connect to message queue: %v", err))
 	}
 }
 
@@ -137,16 +137,17 @@ func ListenForRpc() {
 	}
 }
 
-func BroadcastToLocale (payload map[string] interface{}) error {
+func BroadcastToLocale (key string, payload map[string] interface{}) error {
 	jsonResp, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("error marshalling response: %v", err)
 	}
 
+	log.Debugf("Broadcasting locale update to %v", constants.LocaleUpdateKey + "." + key)
 	err = connection.Publish(
 		constants.AtlasLocaleExchange,
 		messenger.ExchangeKindTopic,
-		constants.LocaleUpdateKey,
+		constants.LocaleUpdateKey + "." + key,
 		jsonResp,
 	)
 	return err
